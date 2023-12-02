@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGetLocationsQuery } from "../redux/slices/locations";
 
 export default function Home() {
@@ -10,7 +11,8 @@ export default function Home() {
     justifyContent: "space-between",
   };
 
-  const { data: locations, error, isLoading } = useGetLocationsQuery();
+  const [page, setPage] = useState(1);
+  const { data: locations, error, isLoading } = useGetLocationsQuery(page);
 
   console.log("Locations:", locations);
 
@@ -37,42 +39,64 @@ export default function Home() {
     return <div>Error: {error.message}</div>;
   }
   return (
-    <div className="flex flex-wrap gap-4 align-center justify-center">
-      {locations.results.map((location) => (
-        <div
-          key={location.id}
-          className="bg-gray-50 flex flex-col justify-center relative overflow-hidden sm:py-12"
-        >
-          <div className="max-w-7xl mx-auto">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative px-7 py-6 bg-white ring-1 ring-gray-900/5 rounded-lg leading-none flex items-center justify-start space-x-6">
-                <img src="./earth-svgrepo-com.svg" />
-                <div className="space-y-2" style={myInlineStyles}>
-                  <h2 className="font-medium">{location.name}</h2>
-                  <p className="text-slate-800">Type : {location.type}</p>
-                  <p className="text-slate-800">
-                    Dimension :{" "}
-                    {location.dimension === "unknown"
-                      ? location.dimension.replace(location.dimension, "-")
-                      : location.dimension}
-                  </p>
-                  <p className="text-slate-800">
-                    Resident count : {location.residents.length}
-                  </p>
-                  <a
-                    href=""
-                    className="block text-indigo-400 group-hover:text-slate-800 transition duration-200"
-                    target="_blank"
-                  >
-                    See More →
-                  </a>
+    <>
+      <div className="flex flex-wrap gap-4 align-center justify-center">
+        {locations.results.map((location) => (
+          <div
+            key={location.id}
+            className="bg-gray-50 flex flex-col justify-center relative overflow-hidden sm:py-12"
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative px-7 py-6 bg-white ring-1 ring-gray-900/5 rounded-lg leading-none flex items-center justify-start space-x-6">
+                  <img src="./earth-svgrepo-com.svg" />
+                  <div className="space-y-2" style={myInlineStyles}>
+                    <h2 className="font-medium">{location.name}</h2>
+                    <p className="text-slate-800">Type : {location.type}</p>
+                    <p className="text-slate-800">
+                      Dimension :{" "}
+                      {location.dimension === "unknown"
+                        ? location.dimension.replace(location.dimension, "-")
+                        : location.dimension}
+                    </p>
+                    <p className="text-slate-800">
+                      Resident count : {location.residents.length}
+                    </p>
+                    <a
+                      href=""
+                      className="block text-indigo-400 group-hover:text-slate-800 transition duration-200"
+                      target="_blank"
+                    >
+                      See More →
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        ))}
+      </div>
+      <div className="flex justify-center mt-8">
+        <button
+          onClick={() => setPage(page - 1)}
+          disabled={page === 1 || isLoading}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mr-2 rounded"
+        >
+          Previous
+        </button>
+        <div className="flex items-center">
+          <span className="mr-2">Page:</span>
+          <span className="font-bold">{page}</span>
         </div>
-      ))}
-    </div>
+        <button
+          onClick={() => setPage(page + 1)}
+          disabled={page === 7 || isLoading} // Assuming 7 is the last page
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 ml-2 rounded"
+        >
+          Next
+        </button>
+      </div>
+    </>
   );
 }
