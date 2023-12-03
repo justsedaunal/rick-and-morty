@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { useGetLocationsQuery } from "../redux/slices/locations";
+import {
+  useGetLocationsQuery,
+  useGetCharacterQuery,
+} from "../redux/slices/locations";
+import ResidentDetails from "./residentDetails";
 
 export default function Home() {
   const myInlineStyles = {
@@ -14,8 +18,14 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const { data: locations, error, isLoading } = useGetLocationsQuery(page);
 
-  console.log("Locations:", locations);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
+  const handleLocationClick = (location) => {
+    setSelectedLocation(location);
+  };
+
+  console.log("Locations:", locations?.results.length);
+  console.log(selectedLocation);
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -38,6 +48,44 @@ export default function Home() {
   if (error) {
     return <div>Error: {error.message}</div>;
   }
+
+  if (selectedLocation) {
+    return (
+      <div>
+        <button onClick={() => setSelectedLocation(null)}>
+          Back to Locations
+        </button>
+        
+        <h3>Residents of {selectedLocation.name}</h3>
+        <div class="mt-3 space-x-4 flex p-1">
+              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-blue-200 hover:scale-105 transition transform duration-200">
+                <span class="block h-6 w-6 bg-blue-400 rounded-full"> </span>
+                <span>all</span>
+              </div>
+              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-red-200 hover:scale-105 transition transform duration-200">
+                <span class="block h-6 w-6 bg-red-400 rounded-full"> </span>
+                <span>dead</span>
+              </div>
+              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-green-200 hover:scale-105 transition transform duration-200">
+                <span class="block h-6 w-6 bg-green-400 rounded-full"> </span>
+                <span>alive</span>
+              </div>
+              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-yellow-200 hover:scale-105 transition transform duration-200">
+                <span class="block h-6 w-6 bg-yellow-400 rounded-full"> </span>
+                <span>unkown</span>
+              </div>
+            </div>
+        <ul className="flex items-center flex-wrap justify-evenly">
+          {selectedLocation.residents.map((residentUrl, index) => {
+       
+            const characterId = residentUrl.split("/").pop();
+
+            return <ResidentDetails key={index} characterId={characterId} />;
+          })}
+        </ul>
+      </div>
+    );
+  }
   return (
     <>
       <div className="flex flex-wrap gap-4 align-center justify-center">
@@ -45,6 +93,7 @@ export default function Home() {
           <div
             key={location.id}
             className="bg-gray-50 flex flex-col justify-center relative overflow-hidden sm:py-12"
+            onClick={() => handleLocationClick(location)}
           >
             <div className="max-w-7xl mx-auto">
               <div className="relative group">
@@ -91,7 +140,7 @@ export default function Home() {
         </div>
         <button
           onClick={() => setPage(page + 1)}
-          disabled={page === 7 || isLoading} // Assuming 7 is the last page
+          disabled={page === 7 || isLoading} 
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 ml-2 rounded"
         >
           Next
@@ -100,3 +149,4 @@ export default function Home() {
     </>
   );
 }
+
