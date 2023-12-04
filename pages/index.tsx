@@ -4,6 +4,8 @@ import {
   useGetCharacterQuery,
 } from "../redux/slices/locations";
 import ResidentDetails from "./residentDetails";
+import { useDispatch, useSelector } from "react-redux";
+import { selectFilterStatus,filterSlice } from "../redux/store";
 
 export default function Home() {
   const myInlineStyles = {
@@ -19,10 +21,38 @@ export default function Home() {
   const { data: locations, error, isLoading } = useGetLocationsQuery(page);
 
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const dispatch = useDispatch();
+  const filterStatus = useSelector(selectFilterStatus);
+
+  const handleFilterStatus = (status) => {
+    dispatch({ type: "filter/setStatus", payload: status });
+  };
 
   const handleLocationClick = (location) => {
     setSelectedLocation(location);
+    dispatch(filterSlice.actions.resetStatus());
   };
+
+  const residentsToDisplay = selectedLocation?.residents || [];
+
+  const filteredResidents = residentsToDisplay.filter(async (residentUrl) => {
+    const characterId = residentUrl.split('/').pop();
+  
+    try {
+      const characterData = await useGetCharacterQuery(characterId).data;
+      const residentStatus = characterData.status;
+  
+      console.log('Character ID:', characterId, 'Resident Status:', residentStatus);
+      return filterStatus === 'all' || residentStatus === filterStatus;
+    } catch (error) {
+      console.error('Error fetching character data:', error);
+      return false;
+    }
+  });
+  
+
+  console.log('Filtered Residents:', filteredResidents);
 
   console.log("Locations:", locations?.results.length);
   console.log(selectedLocation);
@@ -55,34 +85,56 @@ export default function Home() {
         <button onClick={() => setSelectedLocation(null)}>
           Back to Locations
         </button>
-        
-        <h3>Residents of {selectedLocation.name}</h3>
-        <div class="mt-3 space-x-4 flex p-1">
-              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-blue-200 hover:scale-105 transition transform duration-200">
-                <span class="block h-6 w-6 bg-blue-400 rounded-full"> </span>
-                <span>all</span>
-              </div>
-              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-red-200 hover:scale-105 transition transform duration-200">
-                <span class="block h-6 w-6 bg-red-400 rounded-full"> </span>
-                <span>dead</span>
-              </div>
-              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-green-200 hover:scale-105 transition transform duration-200">
-                <span class="block h-6 w-6 bg-green-400 rounded-full"> </span>
-                <span>alive</span>
-              </div>
-              <div class="flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-yellow-200 hover:scale-105 transition transform duration-200">
-                <span class="block h-6 w-6 bg-yellow-400 rounded-full"> </span>
-                <span>unkown</span>
-              </div>
-            </div>
-        <ul className="flex items-center flex-wrap justify-evenly">
-          {selectedLocation.residents.map((residentUrl, index) => {
-       
-            const characterId = residentUrl.split("/").pop();
 
-            return <ResidentDetails key={index} characterId={characterId} />;
-          })}
-        </ul>
+        <h3>Residents of {selectedLocation.name}</h3>
+        <div className="mt-3 space-x-4 flex p-1">
+          <div
+            className={`flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-blue-200 hover:scale-105 transition transform duration-200 ${
+              filterStatus === "all" ? "border-blue-200" : ""
+            }`}
+            onClick={() => handleFilterStatus("all")}
+          >
+            <span className="block h-6 w-6 bg-blue-400 rounded-full"> </span>
+            <span>all</span>
+          </div>
+          <div
+            className={`flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-red-200 hover:scale-105 transition transform duration-200 ${
+              filterStatus === "dead" ? "border-red-200" : ""
+            }`}
+            onClick={() => handleFilterStatus("dead")}
+          >
+            <span className="block h-6 w-6 bg-red-400 rounded-full"> </span>
+            <span>dead</span>
+          </div>
+          <div
+            className={`flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-green-200 hover:scale-105 transition transform duration-200 ${
+              filterStatus === "alive" ? "border-green-200" : ""
+            }`}
+            onClick={() => handleFilterStatus("alive")}
+          >
+            <span className="block h-6 w-6 bg-green-400 rounded-full"> </span>
+            <span>alive</span>
+          </div>
+          <div
+            className={`flex gap-4 p-4 border-4 rounded-full cursor-pointer hover:border-yellow-200 hover:scale-105 transition transform duration-200 ${
+              filterStatus === "unknown" ? "border-yellow-200" : ""
+            }`}
+            onClick={() => handleFilterStatus("unknown")}
+          >
+            <span className="block h-6 w-6 bg-yellow-400 rounded-full"> </span>
+            <span>unknown</span>
+          </div>
+        </div>
+        {filteredResidents.length > 0 ? (
+          <ul className="flex items-center flex-wrap justify-evenly">
+            {filteredResidents.map((residentUrl, index) => {
+              const characterId = residentUrl.split("/").pop();
+              return <ResidentDetails key={index} characterId={characterId} />;
+            })}
+          </ul>
+        ) : (
+          <p>No residents found for the selected status.</p>
+        )}
       </div>
     );
   }
@@ -140,7 +192,7 @@ export default function Home() {
         </div>
         <button
           onClick={() => setPage(page + 1)}
-          disabled={page === 7 || isLoading} 
+          disabled={page === 7 || isLoading}
           className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 ml-2 rounded"
         >
           Next
@@ -149,4 +201,3 @@ export default function Home() {
     </>
   );
 }
-
